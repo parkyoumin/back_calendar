@@ -1,31 +1,31 @@
 import { Injectable } from "@nestjs/common";
-import { CreateUserDto } from "./dto/create-user.dto";
 import { UserRepository } from "./user.repository";
+import { CreateUserRequestDto } from "./dto/create-user.request.dto";
 
 @Injectable()
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async findUser(email: string) {
-    const userFound = await this.userRepository.findUser(email);
-
-    if (userFound) {
-      return { status: 200, data: true };
-    } else {
-      return { status: 200, data: false };
-    }
+  async createUser(createUserRequestDto: CreateUserRequestDto) {
+    return await this.userRepository.createUser(createUserRequestDto);
   }
 
-  async signUp(createUserDto: CreateUserDto) {
-    const response = await this.userRepository.signUp(createUserDto);
-
-    return {
-      status: 200,
-      data: response,
-    };
+  async isUserByProviderAccountId(providerAccountId: string) {
+    return await this.userRepository.findUserByProviderAccountId(
+      providerAccountId,
+    );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async findUserByProviderAccountId(providerAccountId: string) {
+    return await this.userRepository.findUserByProviderAccountId(
+      providerAccountId,
+    );
+  }
+
+  async updateRefreshToken(providerAccountId: string, refreshToken: string) {
+    return await this.userRepository.updateRefreshToken(
+      providerAccountId,
+      refreshToken,
+    );
   }
 }

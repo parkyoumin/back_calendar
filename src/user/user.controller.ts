@@ -1,35 +1,45 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Get,
-  Query,
-} from "@nestjs/common";
+import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { CreateUserDto } from "./dto/create-user.dto";
+import { AuthGuard } from "@nestjs/passport";
 
 @Controller("user")
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // 유저 검사
+  @Get("/is")
+  async isUserByProviderAccountId(
+    @Query() query: { providerAccountId: string },
+  ) {
+    const { providerAccountId } = query;
+    const user =
+      await this.userService.isUserByProviderAccountId(providerAccountId);
+
+    if (user) {
+      return { status: 200, data: true };
+    } else {
+      return { status: 200, data: false };
+    }
+  }
+
   @Get()
-  findUser(@Query() query: { email: string }) {
-    const { email } = query;
-    return this.userService.findUser(email);
-  }
+  @UseGuards(AuthGuard())
+  async findUserByProviderAccountId(
+    @Query() query: { providerAccountId: string },
+  ) {
+    const { providerAccountId } = query;
+    const user =
+      await this.userService.findUserByProviderAccountId(providerAccountId);
 
-  // 회원가입
-  @Post()
-  signUp(@Body() createUserDto: CreateUserDto) {
-    return this.userService.signUp(createUserDto);
-  }
-
-  // 탈퇴
-  @Delete(":id")
-  remove(@Param("id") id: string) {
-    return this.userService.remove(+id);
+    if (user) {
+      return {
+        status: 200,
+        data: user,
+      };
+    } else {
+      return {
+        status: 400,
+        data: "실패",
+      };
+    }
   }
 }
