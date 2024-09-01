@@ -11,10 +11,10 @@ export class UserController {
     @Query() query: { providerAccountId: string },
   ) {
     const { providerAccountId } = query;
-    const user =
+    const isUser =
       await this.userService.isUserByProviderAccountId(providerAccountId);
 
-    if (user) {
+    if (isUser) {
       return { status: 200, data: true };
     } else {
       return { status: 200, data: false };
@@ -30,16 +30,9 @@ export class UserController {
     const user =
       await this.userService.findUserByProviderAccountId(providerAccountId);
 
-    if (user) {
-      return {
-        status: 200,
-        data: user,
-      };
-    } else {
-      return {
-        status: 400,
-        data: "실패",
-      };
-    }
+    return {
+      status: 200,
+      data: user,
+    };
   }
 }

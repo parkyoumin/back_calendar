@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { UserRepository } from "./user.repository";
 import { CreateUserRequestDto } from "./dto/create-user.request.dto";
 
@@ -7,25 +7,47 @@ export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
   async createUser(createUserRequestDto: CreateUserRequestDto) {
-    return await this.userRepository.createUser(createUserRequestDto);
+    const user = await this.userRepository.createUser(createUserRequestDto);
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    return user;
   }
 
   async isUserByProviderAccountId(providerAccountId: string) {
-    return await this.userRepository.findUserByProviderAccountId(
-      providerAccountId,
-    );
+    const user =
+      await this.userRepository.findUserByProviderAccountId(providerAccountId);
+
+    if (user) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   async findUserByProviderAccountId(providerAccountId: string) {
-    return await this.userRepository.findUserByProviderAccountId(
-      providerAccountId,
-    );
+    const user =
+      await this.userRepository.findUserByProviderAccountId(providerAccountId);
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    return user;
   }
 
   async updateRefreshToken(providerAccountId: string, refreshToken: string) {
-    return await this.userRepository.updateRefreshToken(
+    const user = await this.userRepository.updateRefreshToken(
       providerAccountId,
       refreshToken,
     );
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    return user;
   }
 }

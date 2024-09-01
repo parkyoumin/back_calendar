@@ -7,15 +7,22 @@ import { JwtStrategy } from "./jwt/jwt.strategy";
 import { JwtAuthGuard } from "./jwt/jwt.guard";
 import { UserService } from "src/user/user.service";
 import { UserRepository } from "src/user/user.repository";
+import { GoogleStrategy } from "./oauth/google.strategy";
+import { PassportModule } from "@nestjs/passport";
 
 @Module({
-  imports: [PrismaModule, JwtModule.register({ global: true })],
+  imports: [
+    PrismaModule,
+    JwtModule.register({ global: true }),
+    PassportModule.register({ defaultStrategy: "google" }),
+  ],
   providers: [
     AuthService,
     JwtStrategy,
     JwtAuthGuard,
     UserService,
     UserRepository,
+    GoogleStrategy,
   ],
   controllers: [AuthController],
 })
