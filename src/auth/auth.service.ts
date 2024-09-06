@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { SignupRequestDto } from "./dto/signup.request.dto";
+import { CreateUser } from "src/types/user.type";
 import { UserService } from "src/user/user.service";
 
 @Injectable()
@@ -25,12 +25,16 @@ export class AuthService {
     return user;
   }
 
-  async signUp(signupRequestDto: SignupRequestDto) {
-    return await this.userService.createUser(signupRequestDto);
+  async signUp(createUser: CreateUser) {
+    return await this.userService.createUser(createUser);
   }
 
   async logout(providerAccountId: string) {
     return await this.userService.updateRefreshToken(providerAccountId, null);
+  }
+
+  async withdraw(providerAccountId: string) {
+    return await this.userService.deleteUser(providerAccountId);
   }
 
   async generateAccessToken(providerAccountId: string) {
@@ -38,7 +42,7 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_SECRET_KEY,
-      expiresIn: "10s",
+      expiresIn: "1h",
     });
 
     return accessToken;

@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { UserRepository } from "./user.repository";
-import { CreateUserRequestDto } from "./dto/create-user.request.dto";
+import { CreateUser, User } from "src/types/user.type";
 
 @Injectable()
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async createUser(createUserRequestDto: CreateUserRequestDto) {
-    const user = await this.userRepository.createUser(createUserRequestDto);
+  async createUser(createUser: CreateUser) {
+    const user: User = await this.userRepository.createUser(createUser);
 
     if (!user) {
       throw new NotFoundException("User not found");
@@ -17,7 +17,7 @@ export class UserService {
   }
 
   async isUserByProviderAccountId(providerAccountId: string) {
-    const user =
+    const user: User =
       await this.userRepository.findUserByProviderAccountId(providerAccountId);
 
     if (user) {
@@ -28,7 +28,7 @@ export class UserService {
   }
 
   async findUserByProviderAccountId(providerAccountId: string) {
-    const user =
+    const user: User =
       await this.userRepository.findUserByProviderAccountId(providerAccountId);
 
     if (!user) {
@@ -39,7 +39,7 @@ export class UserService {
   }
 
   async updateRefreshToken(providerAccountId: string, refreshToken: string) {
-    const user = await this.userRepository.updateRefreshToken(
+    const user: User = await this.userRepository.updateRefreshToken(
       providerAccountId,
       refreshToken,
     );
@@ -49,5 +49,9 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async deleteUser(providerAccountId: string) {
+    return await this.userRepository.deleteUser(providerAccountId);
   }
 }
