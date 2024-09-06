@@ -4,11 +4,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { LoginRequestDto } from "./dto/login.request.dto";
 import { SignupRequestDto } from "./dto/signup.request.dto";
 import { UserService } from "src/user/user.service";
-import { RefreshRequestDto } from "./dto/refresh.request.dto";
-import { LogoutRequestDto } from "./dto/logout.request.dto";
 
 @Injectable()
 export class AuthService {
@@ -17,9 +14,7 @@ export class AuthService {
     private readonly userService: UserService,
   ) {}
 
-  async login(loginRequestDto: LoginRequestDto) {
-    const { providerAccountId } = loginRequestDto;
-
+  async login(providerAccountId: string) {
     const user =
       await this.userService.findUserByProviderAccountId(providerAccountId);
 
@@ -34,11 +29,8 @@ export class AuthService {
     return await this.userService.createUser(signupRequestDto);
   }
 
-  async logout(logoutRequestDto: LogoutRequestDto) {
-    return await this.userService.updateRefreshToken(
-      logoutRequestDto.providerAccountId,
-      null,
-    );
+  async logout(providerAccountId: string) {
+    return await this.userService.updateRefreshToken(providerAccountId, null);
   }
 
   async generateAccessToken(providerAccountId: string) {
@@ -46,7 +38,7 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_SECRET_KEY,
-      expiresIn: "1h",
+      expiresIn: "10s",
     });
 
     return accessToken;
@@ -62,19 +54,16 @@ export class AuthService {
     return refreshToken;
   }
 
-  async refreshAccessToken(refreshRequestDto: RefreshRequestDto) {
-    const user = await this.userService.findUserByProviderAccountId(
-      refreshRequestDto.providerAccountId,
-    );
+  async refreshAccessToken(providerAccountId: string, refreshToken: string) {
+    const user =
+      await this.userService.findUserByProviderAccountId(providerAccountId);
 
     if (!user) {
       throw new NotFoundException("User not found");
     }
 
-    if (refreshRequestDto.refreshToken === user.refreshToken) {
-      const newAccessToken = this.generateAccessToken(
-        refreshRequestDto.providerAccountId,
-      );
+    if (refreshToken === user.refreshToken) {
+      const newAccessToken = this.generateAccessToken(providerAccountId);
       return newAccessToken;
     } else {
       throw new BadRequestException("Refresh token is not user's");

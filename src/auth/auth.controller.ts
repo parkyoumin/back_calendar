@@ -1,16 +1,13 @@
 import {
-  Body,
+  BadRequestException,
   Controller,
   Get,
-  Post,
   Req,
   Res,
   UseGuards,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { RefreshRequestDto } from "./dto/refresh.request.dto";
-import { LogoutRequestDto } from "./dto/logout.request.dto";
-import { Response } from "express";
+import { Request, Response } from "express";
 import { UserService } from "src/user/user.service";
 import { AuthGuard } from "@nestjs/passport";
 
@@ -36,8 +33,7 @@ export class AuthController {
 
     switch (user.type) {
       case "login": {
-        const loginRequestDto = { providerAccountId };
-        const user = await this.authService.login(loginRequestDto);
+        const user = await this.authService.login(providerAccountId);
 
         const accessToken =
           await this.authService.generateAccessToken(providerAccountId);
@@ -50,7 +46,11 @@ export class AuthController {
           refreshToken,
         );
 
-        res.setHeader("Authoriztaion", "Bearer " + accessToken);
+        res.cookie("provider_account_id", providerAccountId, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+        });
         res.cookie("access_token", accessToken, {
           httpOnly: true,
           secure: false,
@@ -81,6 +81,11 @@ export class AuthController {
           refreshToken,
         );
 
+        res.cookie("provider_account_id", providerAccountId, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+        });
         res.cookie("access_token", accessToken, {
           httpOnly: true,
           secure: false,
@@ -98,51 +103,85 @@ export class AuthController {
     }
   }
 
-  @Post("/refresh")
+  @Get("/refresh")
   async refresh(
-    @Body() refreshRequestDto: RefreshRequestDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const newAccessToken =
-      await this.authService.refreshAccessToken(refreshRequestDto);
+    const providerAccountId = req.cookies["provider_account_id"];
 
-    res.cookie("access_token", newAccessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
+    if (providerAccountId) {
+      const user =
+        await this.userService.findUserByProviderAccountId(providerAccountId);
 
-    res.send({
-      status: 200,
-      data: {
-        message: "refresh access token success",
-      },
-    });
+      const refreshToken = req.cookies["refresh_token"];
+
+      const newAccessToken = await this.authService.refreshAccessToken(
+        providerAccountId,
+        refreshToken,
+      );
+      const newRefreshToken = await this.authService.generateRefreshToken(
+        user.id,
+      );
+
+      await this.userService.updateRefreshToken(
+        providerAccountId,
+        newRefreshToken,
+      );
+
+      res.cookie("access_token", newAccessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+      });
+      res.cookie("refresh_token", newRefreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+      });
+
+      res.send({
+        status: 200,
+        data: {
+          message: "refresh access token success",
+        },
+      });
+    } else {
+      throw new BadRequestException("Have to login");
+    }
   }
 
-  @Post("/logout")
-  async logout(
-    @Body() logoutRequestDto: LogoutRequestDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    await this.authService.logout(logoutRequestDto);
+  @Get("/logout")
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const providerAccountId = req.cookies["provider_account_id"];
 
-    res.clearCookie("access_token", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
-    res.clearCookie("refresh_token", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
+    if (providerAccountId) {
+      await this.authService.logout(providerAccountId);
 
-    res.send({
-      status: 200,
-      data: {
-        message: "logout success",
-      },
-    });
+      res.clearCookie("provider_account_id", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+      });
+      res.clearCookie("access_token", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+      });
+      res.clearCookie("refresh_token", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+      });
+
+      res.send({
+        status: 200,
+        data: {
+          message: "logout success",
+        },
+      });
+    } else {
+      throw new BadRequestException("Have to login");
+    }
   }
 }
