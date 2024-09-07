@@ -14,10 +14,27 @@ datasource db {
 }
 
 model User {
-  id                 Int    @id @default(autoincrement())
-  providerAccountId  String @unique
+  id                 BigInt @id @default(autoincrement())
+  providerAccountId  String @unique @map("provider_account_id")
   email              String
   name               String
-  refreshToken       String?
-  createdAt          DateTime @default(now())
+  refreshToken       String? @map("refresh_token")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  plans Plan[]
+}
+
+model Plan {
+  id            BigInt @id @default(autoincrement()) 
+  title         String
+  description   String
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  colour        String
+  authorId      BigInt   @map("author_id")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user          User @relation(fields: [authorId], references: [id], onDelete:Cascade)
 }
